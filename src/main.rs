@@ -4,10 +4,8 @@ use yew::{html, Component, Context, Html};
 
 pub enum Msg {
     StartTimeout,
-    StartInterval,
     Cancel,
     Done,
-    Tick,
     UpdateTime,
     UpdateCountdown,
 
@@ -64,39 +62,21 @@ impl Component for App {
             Msg::StartTimeout => {
                 let handle = {
                     let link = ctx.link().clone();
-                    Timeout::new(5000, move || link.send_message(Msg::Done))
+                    Timeout::new(self.countdown * 1000, move || link.send_message(Msg::Done))
                 };
                 let counter = {
                     let link = ctx.link().clone();
                     Interval::new(1000, move || {
                         link.send_message(Msg::UpdateCountdown);
                     })
-                };
-                
-                self.countdown = 5;
-                
-                
-
+                };             
+                self.countdown = 10;
                 self.messages.clear();
                 console::clear!();
-
                 self.messages.push("Timer started!");
                 self.console_timer = Some(Timer::new("Timer"));
                 self.timeout = Some(handle);
                 self.interval = Some(counter);
-                true
-            }
-            Msg::StartInterval => {
-                let handle = {
-                    let link = ctx.link().clone();
-                    Interval::new(1000, move || link.send_message(Msg::Tick))
-                };
-                self.interval = Some(handle);
-
-                self.messages.clear();
-                console::clear!();
-
-                self.messages.push("Interval started!");
                 true
             }
             Msg::Cancel => {
@@ -109,27 +89,14 @@ impl Component for App {
                 self.cancel();
                 self.messages.clear();
                 self.messages.push("Done!");
-
-                // todo weblog
-                // ConsoleService::group();
                 console::info!("Done!");
                 if let Some(timer) = self.console_timer.take() {
                     drop(timer);
                 }
-
-                // todo weblog
-                // ConsoleService::group_end();
-                true
-            }
-            Msg::Tick => {
-                self.messages.push("Tick...");
-                // todo weblog
-                // ConsoleService::count_named("Tick");
                 true
             }
             Msg::UpdateTime => {
                 self.time = App::get_current_time();
-
                 true
             }
             Msg::UpdateCountdown => {
@@ -152,17 +119,12 @@ impl Component for App {
                     <button disabled={has_job} onclick={ctx.link().callback(|_| Msg::StartTimeout)}>
                         { "Start Timeout" }
                     </button>
-                    <button disabled={has_job} onclick={ctx.link().callback(|_| Msg::StartInterval)}>
-                        { "Start Interval" }
-                    </button>
                     <button disabled={!has_job} onclick={ctx.link().callback(|_| Msg::Cancel)}>
                         { "Cancel!" }
                     </button>
+                    
                 </div>
                 <div id="wrapper">
-                    <div id="time">
-                        { &self.time }
-                    </div>
                     <div id="timer">
                         { if show_countdown { html! { <p>{ format!("Countdown: {} seconds", self.countdown) }</p> } } else { html! {} } }
                     </div>

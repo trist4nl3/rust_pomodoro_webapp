@@ -2,10 +2,6 @@
 
 This is a simple Pomodoro Timer implemented in Rust, designed to help you manage your work sessions effectively using the Pomodoro Technique.
 
-## What is the Pomodoro Technique?
-
-The Pomodoro Technique is a time management method developed by Francesco Cirillo in the late 1980s. It involves breaking work into intervals, traditionally 25 minutes in length, separated by short breaks. These intervals are known as "pomodoros," named after the Italian word for tomato, after the tomato-shaped kitchen timer that Cirillo used as a university student.
-
 ## How to Use
 
 1. **Download/Build the Project**: Clone the repository and build the project using Rust's package manager Cargo.
@@ -32,6 +28,8 @@ The Pomodoro Technique is a time management method developed by Francesco Cirill
 - [ ] **Logging**: Implement logging functionality to track productivity over time.
 - [ ] **User Interface**: Develop a simple graphical user interface (GUI) for easier interaction.
 - [ ] **Task Management Integration**: Integrate with task management tools or services for a seamless workflow.
+- [ ] **Web hosting service**: Web hosting service so the application can be used by any web device.
+
 
 ## Contributing
 
@@ -43,7 +41,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Acknowledgments
 
-- Yew example for the timer
+- Timer Example from the [Yew Github respository](https://github.com/yewstack/yew/tree/master/examples/timer).
 
 ## About the Author
 

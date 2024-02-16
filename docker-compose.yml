@@ -1,0 +1,12 @@
+version: '3'
+
+services:
+  rust_website:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ..:/workspace:cached
+    command: tail -f /dev/null
+    network_mode: "host"
+    working_dir: /workspace/

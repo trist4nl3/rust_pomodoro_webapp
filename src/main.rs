@@ -12,7 +12,7 @@ pub enum Msg {
 }
 
 pub struct App {
-    time: String,
+    time: u32,
     countdown: u32,
     messages: Vec<&'static str>,
     _standalone: (Interval, Interval),
@@ -22,11 +22,6 @@ pub struct App {
 }
 
 impl App {
-    fn get_current_time() -> String {
-        let date = js_sys::Date::new_0();
-        String::from(date.to_locale_time_string("en-US"))
-    }
-
     fn cancel(&mut self) {
         self.timeout = None;
         self.interval = None;
@@ -47,7 +42,7 @@ impl Component for App {
         };
 
         Self {
-            time: App::get_current_time(),
+            time: 10,
             countdown: 0,
             messages: Vec::new(),
             _standalone: (standalone_handle, clock_handle),
@@ -62,15 +57,16 @@ impl Component for App {
             Msg::StartTimeout => {
                 let handle = {
                     let link = ctx.link().clone();
-                    Timeout::new(self.countdown * 1000, move || link.send_message(Msg::Done))
+                    Timeout::new(self.time * 1000, move || link.send_message(Msg::Done))
                 };
                 let counter = {
                     let link = ctx.link().clone();
                     Interval::new(1000, move || {
                         link.send_message(Msg::UpdateCountdown);
                     })
-                };             
-                self.countdown = 10;
+                };
+                       
+                self.countdown = self.time;
                 self.messages.clear();
                 console::clear!();
                 self.messages.push("Timer started!");
@@ -96,7 +92,7 @@ impl Component for App {
                 true
             }
             Msg::UpdateTime => {
-                self.time = App::get_current_time();
+                
                 true
             }
             Msg::UpdateCountdown => {

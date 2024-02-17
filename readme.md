@@ -12,10 +12,10 @@ This is a simple Pomodoro Timer implemented in Rust, designed to help you manage
    cargo build --release
    ```
 
-2. **Run the Timer**: Execute the built binary to start the Pomodoro Timer.
+2. **Run the Timer**: To open the timer on localhost
 
    ```
-   ./target/release/rust-pomodoro-timer
+   trunk serve --open
    ```
 
 3. **Interact with the Timer**: Once the timer starts, you'll see notifications for work sessions and breaks. Use these intervals to focus on your tasks during work sessions and take short breaks during breaks.
@@ -35,9 +35,6 @@ This is a simple Pomodoro Timer implemented in Rust, designed to help you manage
 
 Contributions are welcome! Feel free to submit bug reports, feature requests, or pull requests via the [GitHub repository](https://github.com/trist4nl3/rust-pomodoro-webapp).
 
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 
@@ -45,4 +42,4 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## About the Author
 
-This Pomodoro Timer was created by [Your Name]. You can find more of my projects on [GitHub](https://github.com/trist4nl3).
+This Pomodoro Timer was created by trist4nl3. You can find more of my projects on [GitHub](https://github.com/trist4nl3).

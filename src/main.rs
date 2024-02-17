@@ -42,7 +42,7 @@ impl Component for App {
         };
 
         Self {
-            time: 10,
+            time: 10, // seconds
             countdown: 0,
             messages: Vec::new(),
             _standalone: (standalone_handle, clock_handle),

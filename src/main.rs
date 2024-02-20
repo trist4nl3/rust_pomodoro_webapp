@@ -1,19 +1,9 @@
-mod pomodoro;
+mod components;
+mod pages;
 
-use yew::prelude::*;
-
-use pomodoro::Pomodoro;
-
-#[function_component]
-pub fn App() -> Html {
-    html! {
-        <>
-            <h1 class="text-3xl font-bold text-center mt-4">{"Pomodoro"}</h1>
-            <Pomodoro />
-        </>
-    }
-}
+use pages::home::Home;
 
 fn main() {
-    yew::Renderer::<App>::new().render();
+    wasm_logger::init(wasm_logger::Config::default());
+    yew::Renderer::<Home>::new().render();
 }

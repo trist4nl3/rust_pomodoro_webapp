@@ -7,6 +7,14 @@ edition = "2021"
 
 [dependencies]
 yew = { git = "https://github.com/yewstack/yew/", features = ["csr"] }
-js-sys = "0.3"
-gloo = "0.10"
-wasm-bindgen = "0.2"
+log = "0.4.6"
+wasm-bindgen = "0.2.84"
+wasm-logger = "0.2.0"
+web-sys = "0.3.61"
+yew-router = "0.17"
+serde = "1.0.152"
+serde_json = "1.0.94"
+gloo-net = "0.2.6"
+wasm-bindgen-futures = "0.4"
+gloo = "0.10.0"
+js-sys = "0.3.64"

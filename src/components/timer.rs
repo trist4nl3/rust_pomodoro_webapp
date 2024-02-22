@@ -144,9 +144,6 @@ pub fn Pomodoro() -> Html {
         html! {}
     };
 
-    
-
-
     let has_job = state.interval_handle.is_some() || state.timeout_handle.is_some();
 
     let on_add_timeout = {
@@ -175,57 +172,21 @@ pub fn Pomodoro() -> Html {
         })
     };
 
-    let on_add_interval = {
-        let state = state.clone();
-
-        Callback::from(move |_: MouseEvent| {
-            let interval_state = state.clone();
-            let message_state = state.clone();
-            let i = Interval::new(1000, move || {
-                message_state.dispatch(TimerAction::Add("Tick.."));
-            });
-
-            interval_state.dispatch(TimerAction::SetInterval(i));
-        })
-    };
-
     let on_cancel = {
         Callback::from(move |_: MouseEvent| {
             state.dispatch(TimerAction::Cancel);
         })
     };
 
-    // Handling user input
-    let input_node_ref = use_node_ref();
-    let onchange = {
-        let input_node_ref = input_node_ref.clone();
-        Callback::from(move |_| {
-            let time_state = state.clone();
-            if let Some(input) = input_node_ref.cast::<HtmlInputElement>(){
-                let value = input.value();
-                time_state.dispatch(TimerAction::SetTime(value.parse().unwrap_or(0)));
-            }
-        })
-    };
-
-
     html!(
         <>
             <div id="buttons">
                 <button disabled={has_job} onclick={on_add_timeout}>{ "Start Timeout" }</button>
-                <button disabled={has_job} onclick={on_add_interval}>{ "Start Interval" }</button>
                 <button disabled={!has_job} onclick={on_cancel}>{ "Cancel"}</button>
             </div>
             <div id="user_input">
                 // setting time
-                <label for="time-input">
-                    { "My input:" }
-                    <input ref={input_node_ref}
-                        {onchange}
-                        id="my-input"
-                        type="number"
-                    />
-                </label>
+                
 
                 
             </div>

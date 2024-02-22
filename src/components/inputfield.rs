@@ -18,13 +18,16 @@ pub fn field_input(props: &InputFieldProps) -> Html {
     } = props;
 
     html! {
-        <div>
-            <label for = "dangerous-input"> // Taken from the yew documentation
-                { label }
-                < input
-                    type = { input_type }
-                    name = { name }
-                    ref = { node_ref.clone() }
-            </label>
+    
+        <label for = "dangerous-input"> // Taken from the yew documentation
+            { label }
+            < input
+                type = { input_type.clone() }
+                name = { name.clone() }
+                ref = { node_ref.clone() }
+            />
+        </label>
+
+        
     }
 }

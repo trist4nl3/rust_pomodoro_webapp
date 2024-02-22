@@ -2,6 +2,12 @@ use std::rc::Rc;
 use web_sys::HtmlInputElement;
 use gloo::timers::callback::{Interval, Timeout};
 use yew::prelude::*;
+use wasm_bindgen::JsValue;
+use gloo_net::http::{Headers, Request};
+use serde::{Deserialize, Serialize};
+use serde_json;
+use crate::components::inputfield::FieldInput;
+
 
 pub fn get_current_time() -> String {
     let date = js_sys::Date::new_0();
@@ -16,6 +22,7 @@ pub enum TimerAction {
     TimeoutDone,
     UpdateCountdown,
     SetTime(u32),
+    Pause,
 }
 
 #[derive(Clone, Debug)]
@@ -100,6 +107,16 @@ impl Reducible for TimerState {
                     time_remaining: time,
                 })
             }
+            TimerAction::Pause => {
+                let mut messages = self.messages.clone();
+                messages.push("Paused!");
+                Rc::new(TimerState {
+                    messages,
+                    interval_handle: self.interval_handle.clone(),
+                    timeout_handle: self.timeout_handle.clone(),
+                    time_remaining: self.time_remaining,
+                })
+            }
         }
     }
 }
@@ -127,6 +144,10 @@ pub fn Pomodoro() -> Html {
         timeout_handle: None,
         time_remaining: 0,
     });
+
+    let time_ref = use_node_ref();
+
+
 
     let mut key = 0;
     let messages: Html = state
@@ -172,20 +193,50 @@ pub fn Pomodoro() -> Html {
         })
     };
 
+
+    let onsubmit = {
+        let state = state.clone();
+        let time_ref = time_ref.clone();
+
+        Callback::from(move |event: SubmitEvent| {
+            event.prevent_default();
+            let time = time_ref.cast::<HtmlInputElement>().unwrap().value().parse().unwrap();
+            state.dispatch(TimerAction::SetTime(time))
+        })
+
+    };
+    
+
     let on_cancel = {
         Callback::from(move |_: MouseEvent| {
             state.dispatch(TimerAction::Cancel);
         })
     };
+    // let on_pause = {
+    //     Callback::from(move |_: MouseEvent| {
+    //         state.dispatch(TimerAction::Pause);
+    //     })
+    // };
+    
 
     html!(
         <>
             <div id="buttons">
-                <button disabled={has_job} onclick={on_add_timeout}>{ "Start Timeout" }</button>
+                <button disabled={has_job} onclick={on_add_timeout}>{ "Start" }</button>
+                //<button disabled={!has_job} onclick={on_pause}>{ "Pause" }</button>
                 <button disabled={!has_job} onclick={on_cancel}>{ "Cancel"}</button>
             </div>
             <div id="user_input">
                 // setting time
+                <form {onsubmit} class="settings">
+                    <FieldInput
+                        label="Pomodoro Time"
+                        input_type="number"
+                        name="time"
+                        node_ref={time_ref}
+                    />
+                    <button type="submit">{"Save"}</button>
+                </form>
                 
 
                 

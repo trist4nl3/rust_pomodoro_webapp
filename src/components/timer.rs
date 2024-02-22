@@ -5,6 +5,8 @@ use yew::prelude::*;
 use crate::components::inputfield::FieldInput;
 
 
+use std::cell::RefCell;
+
 pub fn get_current_time() -> String {
     let date = js_sys::Date::new_0();
     String::from(date.to_locale_time_string("en-US"))
@@ -13,8 +15,8 @@ pub fn get_current_time() -> String {
 pub enum TimerAction {
     Add(&'static str),
     Cancel,
-    SetInterval(Interval),
-    SetTimeout(Timeout),
+    SetInterval(Rc<Interval>),
+    SetTimeout(Rc<Timeout>),
     TimeoutDone,
     UpdateCountdown,
     SetTime(u32),
@@ -38,6 +40,18 @@ impl PartialEq for TimerState {
     }
 }
 
+impl TimerState {
+    fn new() -> Self {
+        TimerState {
+            messages: Vec::new(),
+            interval_handle: None,
+            timeout_handle: None,
+            time_remaining: 5 * 60,
+            time_amount: 5,
+        }
+    }
+}
+
 impl Reducible for TimerState {
     type Action = TimerAction;
 
@@ -56,7 +70,7 @@ impl Reducible for TimerState {
             }
             TimerAction::SetInterval(t) => Rc::new(TimerState {
                 messages: vec!["Interval started!"],
-                interval_handle: Some(Rc::from(t)),
+                interval_handle: Some(t),
                 timeout_handle: self.timeout_handle.clone(),
                 time_remaining: self.time_remaining,
                 time_amount: self.time_amount,
@@ -64,7 +78,7 @@ impl Reducible for TimerState {
             TimerAction::SetTimeout(t) => Rc::new(TimerState {
                 messages: vec!["Timer started!!"],
                 interval_handle: self.interval_handle.clone(),
-                timeout_handle: Some(Rc::from(t)),
+                timeout_handle: Some(t),
                 time_remaining: self.time_remaining,
                 time_amount: self.time_amount,
             }),
@@ -153,17 +167,9 @@ pub fn clock() -> Html {
 
 #[function_component]
 pub fn Pomodoro() -> Html {
-    let state = use_reducer(|| TimerState {
-        messages: Vec::new(),
-        interval_handle: None,
-        timeout_handle: None,
-        time_remaining: 5 * 60,
-        time_amount: 5,
-    });
+    let state = use_reducer(TimerState::new);
 
     let time_ref = use_node_ref();
-
-
 
     let mut key = 0;
     let messages: Html = state
@@ -182,22 +188,36 @@ pub fn Pomodoro() -> Html {
     let _seconds_2 = state.clone().time_amount % 60;
     let _time_str_2 = format!("{:02}:{:02}", minutes, seconds);
     
-    
-
-    let display_countdown: Html = if state.clone().time_remaining > 0{
+    let display_countdown: Html = if state.clone().time_remaining > 0 {
         // Display time in 00:00 format
         html! { <div id="time"> {  time_str } </div> }
     } else {
         html! { <div id="time"> {  _time_str_2 } </div> }
     };
    
-    
-
     let has_job = state.timeout_handle.is_some();
+
+    let setting_pressed = Rc::new(RefCell::new(false));
+    let setting_pressed_clone = setting_pressed.clone();
+
+    let on_settings = {
+        let state = state.clone();
+        Callback::from(move |_: MouseEvent| {
+            let mut setting_pressed_ref = setting_pressed_clone.borrow_mut();
+            if *setting_pressed_ref || has_job {
+                let user_input = web_sys::window().unwrap().document().unwrap().get_element_by_id("user_input").unwrap();
+                user_input.set_attribute("style", "display: none;").unwrap();
+                *setting_pressed_ref = false;
+            } else {
+                let user_input = web_sys::window().unwrap().document().unwrap().get_element_by_id("user_input").unwrap();
+                user_input.set_attribute("style", "display: block;").unwrap();
+                *setting_pressed_ref = true;
+            }
+        })
+    };
 
     let on_add_timeout = {
         let state = state.clone();
-
         Callback::from(move |_: MouseEvent| {
             let timeout_state = state.clone();
             let message_state = state.clone();
@@ -208,33 +228,26 @@ pub fn Pomodoro() -> Html {
             let time_state = state.clone();
             time_state.dispatch(TimerAction::SetCountdown(time));
 
-        
-
-
-            let t = Timeout::new(time * 1000, move || {
+            let t = Rc::new(Timeout::new(time * 1000, move || {
                 message_state.dispatch(TimerAction::TimeoutDone);
-            });
-            let i = Interval::new(1000, move || {
+            }));
+            let i = Rc::new(Interval::new(1000, move || {
                 ping_state.dispatch(TimerAction::UpdateCountdown);
-            });
-
+            }));
 
             interval_state.dispatch(TimerAction::SetInterval(i));
             timeout_state.dispatch(TimerAction::SetTimeout(t));
         })
     };
 
-
     let onsubmit = {
         let state = state.clone();
         let time_ref = time_ref.clone();
-
         Callback::from(move |event: SubmitEvent| {
             event.prevent_default();
             let time = time_ref.cast::<HtmlInputElement>().unwrap().value().parse().unwrap();
             state.dispatch(TimerAction::SetTime(time));
         })
-
     };
     
     let time_amount = state.clone().time_amount.to_string();
@@ -251,8 +264,6 @@ pub fn Pomodoro() -> Html {
             state.dispatch(TimerAction::Cancel);
         })
     };
-    
-    
 
     html!(
         <>
@@ -260,8 +271,9 @@ pub fn Pomodoro() -> Html {
                 <button disabled={has_job} onclick={on_add_timeout}>{ "Start" }</button>
                 <button disabled={!has_job} onclick={on_pause}>{ "Pause" }</button>
                 <button disabled={!has_job} onclick={on_cancel}>{ "Cancel"}</button>
+                <button disabled={has_job} onclick={on_settings}>{ "Settings"}</button>
             </div>
-            <div id="user_input">
+            <div id="user_input" style="display: none;">
                 // setting time
                 <form {onsubmit} class="settings">
                     <FieldInput
@@ -271,12 +283,8 @@ pub fn Pomodoro() -> Html {
                         placeholder={time_amount}
                         node_ref={time_ref}
                     />
-                
-                    <button disabled={has_job} type="submit">{"Save"}</button>
+                    <button type="submit">{"Save"}</button>
                 </form>
-                
-
-                
             </div>
             <div id="wrapper">
                 <div id="time_remaining">{ display_countdown }</div>
@@ -287,4 +295,3 @@ pub fn Pomodoro() -> Html {
         </>
     )
 }
-

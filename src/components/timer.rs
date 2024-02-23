@@ -105,19 +105,7 @@ impl Reducible for TimerState {
                     time_default: self.time_default,
                 })
             }
-            TimerAction::Cancel => {
-                let mut messages = self.messages.clone();
-                messages.push("Canceled!");
-                Rc::new(TimerState {
-                    messages,
-                    interval_handle: None,
-                    timeout_handle: None,
-                    time_remaining: self.time_default * 60,
-                    time_amount: self.time_amount,
-                    on_break: self.on_break,
-                    time_default: self.time_default,
-                })
-            }
+            
             TimerAction::UpdateCountdown => {
                 if self.time_remaining > 0 {
                     Rc::new(TimerState {
@@ -167,6 +155,11 @@ impl Reducible for TimerState {
                     on_break: self.on_break,
                     time_default: self.time_default,
                 })
+            }
+            TimerAction::Cancel => {
+                let mut messages = self.messages.clone();
+                messages.push("Canceled!");
+                Rc::new(TimerState::new())
             }
         }
     }
@@ -220,31 +213,34 @@ pub fn Pomodoro() -> Html {
     let has_job = state.timeout_handle.is_some();
 
     let setting_pressed = Rc::new(RefCell::new(false));
-    let setting_pressed_clone = setting_pressed.clone();
+    let setting_pressed_clone = Rc::clone(&setting_pressed); // Clone before moving into closure
 
-    let on_settings = {
-        Callback::from(move |_: MouseEvent| {
-            let mut setting_pressed_ref = setting_pressed_clone.borrow_mut();
-            if *setting_pressed_ref || has_job {
-                let user_input = web_sys::window().unwrap().document().unwrap().get_element_by_id("user_input").unwrap();
-                user_input.set_attribute("style", "display: none;").unwrap();
-                *setting_pressed_ref = false;
-            } else {
-                let user_input = web_sys::window().unwrap().document().unwrap().get_element_by_id("user_input").unwrap();
-                user_input.set_attribute("style", "display: block;").unwrap();
-                *setting_pressed_ref = true;
-            }
-        })
-    };
-
-    let on_exit_settings = {
-        Callback::from(move |_: MouseEvent| {
-            let mut setting_pressed_ref = setting_pressed.borrow_mut();
+let on_settings = {
+    let setting_pressed_clone = setting_pressed_clone.clone(); // Clone again for the closure
+    Callback::from(move |_: MouseEvent| {
+        let mut setting_pressed_ref = setting_pressed_clone.borrow_mut();
+        if *setting_pressed_ref || has_job {
             let user_input = web_sys::window().unwrap().document().unwrap().get_element_by_id("user_input").unwrap();
             user_input.set_attribute("style", "display: none;").unwrap();
             *setting_pressed_ref = false;
-        })
-    };
+        } else {
+            let user_input = web_sys::window().unwrap().document().unwrap().get_element_by_id("user_input").unwrap();
+            user_input.set_attribute("style", "display: block;").unwrap();
+            *setting_pressed_ref = true;
+        }
+    })
+};
+
+let on_exit_settings = {
+    let setting_pressed_clone = setting_pressed.clone(); // Clone again for the closure
+    Callback::from(move |_: MouseEvent| {
+        let mut setting_pressed_ref = setting_pressed_clone.borrow_mut();
+        let user_input = web_sys::window().unwrap().document().unwrap().get_element_by_id("user_input").unwrap();
+        user_input.set_attribute("style", "display: none;").unwrap();
+        *setting_pressed_ref = false;
+    })
+};
+
 
     let on_add_timeout = {
         let state = state.clone();
@@ -277,7 +273,9 @@ pub fn Pomodoro() -> Html {
             event.prevent_default();
             let time = time_ref.cast::<HtmlInputElement>().unwrap().value().parse().unwrap();
             state.dispatch(TimerAction::SetTime(time));
+            state.dispatch(TimerAction::TimeoutDone);
         })
+        
     };
     
     let time_amount = state.clone().time_amount.to_string();
@@ -290,6 +288,12 @@ pub fn Pomodoro() -> Html {
             on_exit_settings.emit(event.clone());
         })
     };
+    let on_cancel = {
+        let state = state.clone();
+        Callback::from(move |_: MouseEvent| {
+            state.dispatch(TimerAction::Cancel);
+        })
+    };
 
     let on_pause = {
         let state = state.clone();
@@ -298,11 +302,7 @@ pub fn Pomodoro() -> Html {
         })
     };
 
-    let on_cancel = {
-        Callback::from(move |_: MouseEvent| {
-            state.dispatch(TimerAction::Cancel);
-        })
-    };
+    
 
     html!(
         <>
@@ -317,14 +317,21 @@ pub fn Pomodoro() -> Html {
                 <div id="time_remaining">{ display_countdown }</div>
             </div>
             <div id="buttons">
-                <button class="button" disabled={has_job} onclick={timer_start}>{ "Start" }</button>
-                <button class="button" disabled={!has_job} onclick={on_pause}>{ "Pause" }</button>
-                <button class="button" disabled={!has_job} onclick={on_cancel}><i class="fas fa-redo-alt"></i></button>
+                {if !has_job {
+                html!(
+                    <button class="button" disabled={has_job} onclick={timer_start}>{ "Start" }</button>
+                )
+                } else {
+                html!(
+                    <button class="button" disabled={!has_job} onclick={on_pause}>{ "Pause" }</button>
+                )
+                }}
+                <button class="button" onclick={on_cancel}><i class="fas fa-redo-alt"></i></button>
                 <div id="settings-button">
                     <button class="button" disabled={has_job} onclick={on_settings}><i class="fas fa-cog"></i></button>
                     <div id="settings-menu">
                         <div id="user_input" class="settings" style="display: none;">
-                            <button class="exit-button" onclick={on_exit_settings}><i class="fas fa-times"></i></button>
+                            <button class="exit-button" onclick={on_exit_settings.clone()}><i class="fas fa-times"></i></button>
                             // setting time
                             <form {onsubmit}>
                                 <FieldInput
@@ -334,7 +341,7 @@ pub fn Pomodoro() -> Html {
                                     placeholder={time_amount}
                                     node_ref={time_ref}
                                 />
-                                <button class="button" type="submit">{"Save"}</button>
+                                <button class="button" type="submit" onclick={on_exit_settings.clone()}>{"Save"}</button>
                             </form>
                         </div>
                         // Other settings content here

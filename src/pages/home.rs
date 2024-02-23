@@ -5,7 +5,7 @@ use crate::components::timer::Pomodoro; // Import the App component from timer.r
 pub fn home() -> Html {
     html! {
         <div>
-            <h1>{"Home"}</h1>
+            
             <Pomodoro />
         </div>
     }

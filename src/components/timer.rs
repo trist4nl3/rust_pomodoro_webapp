@@ -32,6 +32,7 @@ pub struct TimerState {
     time_remaining: u32,
     time_amount: u32,
     on_break: bool,
+    time_default: u32,
 }
 
 impl PartialEq for TimerState {
@@ -50,6 +51,7 @@ impl TimerState {
             time_remaining: 25 * 60,
             time_amount: 25,
             on_break: false,
+            time_default: 25,
         }
     }
 }
@@ -69,6 +71,7 @@ impl Reducible for TimerState {
                     time_remaining: self.time_remaining,
                     time_amount: self.time_amount,
                     on_break: self.on_break,
+                    time_default: self.time_default,
                 })
             }
             TimerAction::SetInterval(t) => Rc::new(TimerState {
@@ -78,6 +81,7 @@ impl Reducible for TimerState {
                 time_remaining: self.time_remaining,
                 time_amount: self.time_amount,
                 on_break: self.on_break,
+                time_default: self.time_default,
             }),
             TimerAction::SetTimeout(t) => Rc::new(TimerState {
                 messages: vec!["Timer started!!"],
@@ -86,6 +90,7 @@ impl Reducible for TimerState {
                 time_remaining: self.time_remaining,
                 time_amount: self.time_amount,
                 on_break: self.on_break,
+                time_default: self.time_default,
             }),
             TimerAction::TimeoutDone => {
                 let mut messages = self.messages.clone();
@@ -97,6 +102,7 @@ impl Reducible for TimerState {
                     time_remaining: self.time_amount * 60,
                     time_amount: self.time_amount,
                     on_break: self.on_break,
+                    time_default: self.time_default,
                 })
             }
             TimerAction::Cancel => {
@@ -106,9 +112,10 @@ impl Reducible for TimerState {
                     messages,
                     interval_handle: None,
                     timeout_handle: None,
-                    time_remaining: self.time_amount * 60,
+                    time_remaining: self.time_default * 60,
                     time_amount: self.time_amount,
                     on_break: self.on_break,
+                    time_default: self.time_default,
                 })
             }
             TimerAction::UpdateCountdown => {
@@ -120,6 +127,7 @@ impl Reducible for TimerState {
                         time_remaining: self.time_remaining - 1,
                         time_amount: self.time_amount,
                         on_break: self.on_break,
+                        time_default: self.time_default,
                     })
                 } else {
                     self.clone()
@@ -133,6 +141,7 @@ impl Reducible for TimerState {
                     time_remaining: time * 60,
                     time_amount: time,
                     on_break: self.on_break,
+                    time_default: time,
                 })
             }
             TimerAction::SetCountdown(time) => {
@@ -143,6 +152,7 @@ impl Reducible for TimerState {
                     time_remaining: time,
                     time_amount: self.time_amount,
                     on_break: self.on_break,
+                    time_default: self.time_default,
                 })
             }
             TimerAction::Pause => {
@@ -155,6 +165,7 @@ impl Reducible for TimerState {
                     time_remaining: self.time_remaining,
                     time_amount: self.time_amount,
                     on_break: self.on_break,
+                    time_default: self.time_default,
                 })
             }
         }

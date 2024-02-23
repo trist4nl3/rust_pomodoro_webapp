@@ -10,6 +10,7 @@ body {
   font-family: "Roboto", sans-serif; /* Apply Roboto font */
 }
 
+/* Increase font size for larger screens */
 @media screen and (min-width: 320px) {
   body {
     font-size: calc(var(--default-font-size) * 1.1);
@@ -25,6 +26,7 @@ body {
     font-size: calc(var(--default-font-size) * 1.3);
   }
 }
+/* Title styles */
 #title-area {
   position: fixed;
   top: 20px;
@@ -46,21 +48,24 @@ body {
   margin-top: 0.5em;
 }
 
+/* Settings menu styles */
 .settings {
   position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   background-color: white;
-  padding: 20vh; /* Increase padding */
-  border-radius: 10vw; /* Increase border-radius */
+  padding: 3vh; /* Increase padding */
+  border-radius: 2vh; /* Increase border-radius */
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 30vw; /* Increase width */
-  height: 30vh;
+  width: 40vw; /* Increase width */
+  height: 40vh;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.2); /* Add box shadow */
 }
 
+/* Background styles */
 #background {
   background-image: url("https://images6.alphacoders.com/132/1326238.png");
   background-size: cover;
@@ -73,6 +78,7 @@ body {
   filter: brightness(70%);
 }
 
+/* Content styles */
 #content {
   display: flex;
   flex-direction: column;
@@ -81,30 +87,29 @@ body {
   height: 100vh;
 }
 
+/* Timer styles */
 #timer_wrapper {
   text-align: center;
-  margin-bottom: 0.5vh; /* Reduce bottom margin */
-  /* Remove border for the timer */
-  border: none;
-  padding: 0.5vw; /* Add padding to the timer */
+  margin-bottom: 1vh; /* Reduce bottom margin */
 }
 
 #time_remaining {
-  font-size: 8vw;
+  font-size: 6vw;
   color: #ffffff;
   font-weight: bold;
-  text-shadow: 0.5vw 0.5vw 1vw rgba(0, 0, 0, 0.5);
+  text-shadow: 0.2vw 0.2vw 0.4vw rgba(0, 0, 0, 0.5);
 }
 
+/* Button styles */
 .button {
-  padding: 1.5vw 3vw; /* Reduce padding for the buttons */
-  margin: 0.5vh; /* Reduce margin */
+  padding: 2vh 4vh; /* Increase padding for the buttons */
+  margin: 1vh; /* Add margin */
   background-color: black; /* Set background color of the button */
   color: #fff;
   cursor: pointer;
   border: none; /* Remove border */
-  border-radius: 2vw;
-  box-shadow: 0 2vw 4vw rgba(0, 0, 0, 0.3);
+  border-radius: 2vh;
+  box-shadow: 0 1vh 2vh rgba(0, 0, 0, 0.3);
   font-size: 1.5em; /* Increase font size of buttons */
   font-weight: bold; /* Make font bold */
   transition: background-color 0.3s; /* Add transition effect */
@@ -114,16 +119,18 @@ body {
   background-color: #333; /* Change background color on hover */
 }
 
+/* Settings button styles */
 #buttons {
-  margin-top: 0.5vh; /* Reduce top margin */
+  margin-top: 1vh; /* Reduce top margin */
   display: flex;
   justify-content: center;
 }
 
 #buttons .button {
-  margin: 0 1vw; /* Reduce horizontal margin */
+  margin: 0 1vh; /* Reduce horizontal margin */
 }
 
+/* Form styles */
 #user_input form {
   display: flex;
   flex-direction: column;
@@ -131,16 +138,16 @@ body {
 }
 
 #user_input form .button {
-  margin-top: 0.5vh; /* Reduce top margin */
+  margin-top: 1vh; /* Reduce top margin */
 }
 
+/* Exit button styles */
 .exit-button {
   background-color: transparent;
   border: none;
   cursor: pointer;
   color: #ff6f61;
-  font-size: 2vw;
-  text-shadow: 0.5vw 0.5vw 1vw rgba(0, 0, 0, 0.5);
+  font-size: 2vh;
   position: absolute;
   top: 1vh;
   right: 1vh;

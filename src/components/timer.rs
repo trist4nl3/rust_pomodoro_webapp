@@ -22,6 +22,7 @@ pub enum TimerAction {
     SetTime(u32),
     SetCountdown(u32),
     Pause,
+    SetBreak(u32),
 }
 
 #[derive(Clone, Debug)]
@@ -32,7 +33,7 @@ pub struct TimerState {
     time_remaining: u32,
     time_amount: u32,
     on_break: bool,
-    time_default: u32,
+    break_time: u32,
 }
 
 impl PartialEq for TimerState {
@@ -51,7 +52,7 @@ impl TimerState {
             time_remaining: 25 * 60,
             time_amount: 25,
             on_break: false,
-            time_default: 25,
+            break_time: 5,
         }
     }
 }
@@ -71,7 +72,7 @@ impl Reducible for TimerState {
                     time_remaining: self.time_remaining,
                     time_amount: self.time_amount,
                     on_break: self.on_break,
-                    time_default: self.time_default,
+                    break_time: self.break_time,
                 })
             }
             TimerAction::SetInterval(t) => Rc::new(TimerState {
@@ -81,7 +82,7 @@ impl Reducible for TimerState {
                 time_remaining: self.time_remaining,
                 time_amount: self.time_amount,
                 on_break: self.on_break,
-                time_default: self.time_default,
+                break_time: self.break_time,
             }),
             TimerAction::SetTimeout(t) => Rc::new(TimerState {
                 messages: vec!["Timer started!!"],
@@ -90,7 +91,7 @@ impl Reducible for TimerState {
                 time_remaining: self.time_remaining,
                 time_amount: self.time_amount,
                 on_break: self.on_break,
-                time_default: self.time_default,
+                break_time: self.break_time,
             }),
             TimerAction::TimeoutDone => {
                 let mut messages = self.messages.clone();
@@ -101,8 +102,8 @@ impl Reducible for TimerState {
                     timeout_handle: None,
                     time_remaining: self.time_amount * 60,
                     time_amount: self.time_amount,
-                    on_break: self.on_break,
-                    time_default: self.time_default,
+                    on_break: !self.on_break,
+                    break_time: self.break_time,
                 })
             }
             
@@ -115,7 +116,7 @@ impl Reducible for TimerState {
                         time_remaining: self.time_remaining - 1,
                         time_amount: self.time_amount,
                         on_break: self.on_break,
-                        time_default: self.time_default,
+                        break_time: self.break_time,
                     })
                 } else {
                     self.clone()
@@ -129,7 +130,7 @@ impl Reducible for TimerState {
                     time_remaining: time * 60,
                     time_amount: time,
                     on_break: self.on_break,
-                    time_default: time,
+                    break_time: self.break_time,
                 })
             }
             TimerAction::SetCountdown(time) => {
@@ -140,7 +141,7 @@ impl Reducible for TimerState {
                     time_remaining: time,
                     time_amount: self.time_amount,
                     on_break: self.on_break,
-                    time_default: self.time_default,
+                    break_time: self.break_time,
                 })
             }
             TimerAction::Pause => {
@@ -153,13 +154,33 @@ impl Reducible for TimerState {
                     time_remaining: self.time_remaining,
                     time_amount: self.time_amount,
                     on_break: self.on_break,
-                    time_default: self.time_default,
+                    break_time: self.break_time,
                 })
             }
             TimerAction::Cancel => {
                 let mut messages = self.messages.clone();
                 messages.push("Canceled!");
-                Rc::new(TimerState::new())
+                Rc::new(TimerState {
+                    messages,
+                    interval_handle: None,
+                    timeout_handle: None,
+                    time_remaining: self.time_amount * 60,
+                    time_amount: self.time_amount,
+                    on_break: self.on_break,
+                    break_time: self.break_time,
+                })
+            }
+            TimerAction::SetBreak(time) => {
+                Rc::new(TimerState {
+                    messages: self.messages.clone(),
+                    interval_handle: self.interval_handle.clone(),
+                    timeout_handle: self.timeout_handle.clone(),
+                    time_remaining: self.time_remaining,
+                    time_amount: self.time_amount,
+                    on_break: self.on_break,
+                    break_time: time,
+                })
+            
             }
         }
     }
@@ -185,6 +206,7 @@ pub fn Pomodoro() -> Html {
     let state = use_reducer(TimerState::new);
 
     let time_ref = use_node_ref();
+    let time_ref_2 = use_node_ref();
 
     let mut key = 0;
     let messages: Html = state
@@ -236,6 +258,8 @@ let on_exit_settings = {
     Callback::from(move |_: MouseEvent| {
         let mut setting_pressed_ref = setting_pressed_clone.borrow_mut();
         let user_input = web_sys::window().unwrap().document().unwrap().get_element_by_id("user_input").unwrap();
+        
+
         user_input.set_attribute("style", "display: none;").unwrap();
         *setting_pressed_ref = false;
     })
@@ -268,17 +292,21 @@ let on_exit_settings = {
 
     let onsubmit = {
         let state = state.clone();
+        let state_2 = state.clone();
         let time_ref = time_ref.clone();
+        let time_ref_2 = time_ref_2.clone();
         Callback::from(move |event: SubmitEvent| {
             event.prevent_default();
-            let time = time_ref.cast::<HtmlInputElement>().unwrap().value().parse().unwrap();
-            state.dispatch(TimerAction::SetTime(time));
-            state.dispatch(TimerAction::TimeoutDone);
+            let work_time = time_ref.cast::<HtmlInputElement>().unwrap().value().parse().unwrap();
+            let break_time = time_ref_2.cast::<HtmlInputElement>().unwrap().value().parse().unwrap();
+            state.dispatch(TimerAction::SetTime(work_time));
+            state_2.dispatch(TimerAction::SetBreak(break_time));
         })
         
     };
     
     let time_amount = state.clone().time_amount.to_string();
+    let break_time = state.clone().break_time.to_string();
 
     let timer_start = {
         let on_add_timeout = on_add_timeout.clone();
@@ -302,6 +330,19 @@ let on_exit_settings = {
         })
     };
 
+    let on_work = {
+        let state = state.clone();
+        Callback::from(move |_: MouseEvent| {
+            state.dispatch(TimerAction::Cancel);
+        })
+    };
+
+    let on_break = {
+        let state = state.clone();
+        Callback::from(move |_: MouseEvent| {
+            state.dispatch(TimerAction::SetTime(state.clone().break_time));
+        })
+    };
     
 
     html!(
@@ -312,7 +353,10 @@ let on_exit_settings = {
                 <h1 class="title">{ "Pomodoro Timer" }</h1>
                 <h2 class="subtitle">{ "By Neblume"}</h2>
             </div>
-
+            <div id="switch_states">
+                <button class="button" onclick={on_work}>{"Work"}</button>
+                <button class="button" onclick={on_break}>{"Break"}</button>
+            </div>
             <div id="timer_wrapper">
                 <div id="time_remaining">{ display_countdown }</div>
             </div>
@@ -335,13 +379,21 @@ let on_exit_settings = {
                             // setting time
                             <form {onsubmit}>
                                 <FieldInput
-                                    label="Minutes:"
+                                    label="Work time:"
                                     input_type="number"
                                     name=""
                                     placeholder={time_amount}
                                     node_ref={time_ref}
                                 />
-                                <button class="button" type="submit" onclick={on_exit_settings.clone()}>{"Save"}</button>
+                                <FieldInput
+                                    label="Break time:"
+                                    input_type="number"
+                                    name=""
+                                    placeholder={break_time}
+                                    node_ref={time_ref_2}
+
+                                />
+                                <button class="button" type="submit">{"Save"}</button>
                             </form>
                         </div>
                         // Other settings content here

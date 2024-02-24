@@ -23,6 +23,7 @@ pub enum TimerAction {
     SetCountdown(u32),
     Pause,
     SetBreak(u32),
+    SetWork(u32),
 }
 
 #[derive(Clone, Debug)]
@@ -34,6 +35,7 @@ pub struct TimerState {
     time_amount: u32,
     on_break: bool,
     break_time: u32,
+    work_time: u32,
 }
 
 impl PartialEq for TimerState {
@@ -53,6 +55,7 @@ impl TimerState {
             time_amount: 25,
             on_break: false,
             break_time: 5,
+            work_time: 25,
         }
     }
 }
@@ -73,6 +76,7 @@ impl Reducible for TimerState {
                     time_amount: self.time_amount,
                     on_break: self.on_break,
                     break_time: self.break_time,
+                    work_time: self.work_time,
                 })
             }
             TimerAction::SetInterval(t) => Rc::new(TimerState {
@@ -83,6 +87,7 @@ impl Reducible for TimerState {
                 time_amount: self.time_amount,
                 on_break: self.on_break,
                 break_time: self.break_time,
+                work_time: self.work_time,
             }),
             TimerAction::SetTimeout(t) => Rc::new(TimerState {
                 messages: vec!["Timer started!!"],
@@ -92,6 +97,7 @@ impl Reducible for TimerState {
                 time_amount: self.time_amount,
                 on_break: self.on_break,
                 break_time: self.break_time,
+                work_time: self.work_time,
             }),
             TimerAction::TimeoutDone => {
                 let mut messages = self.messages.clone();
@@ -104,6 +110,7 @@ impl Reducible for TimerState {
                     time_amount: self.time_amount,
                     on_break: !self.on_break,
                     break_time: self.break_time,
+                    work_time: self.work_time,
                 })
             }
             
@@ -117,6 +124,7 @@ impl Reducible for TimerState {
                         time_amount: self.time_amount,
                         on_break: self.on_break,
                         break_time: self.break_time,
+                        work_time: self.work_time,
                     })
                 } else {
                     self.clone()
@@ -131,6 +139,7 @@ impl Reducible for TimerState {
                     time_amount: time,
                     on_break: self.on_break,
                     break_time: self.break_time,
+                    work_time: self.work_time,
                 })
             }
             TimerAction::SetCountdown(time) => {
@@ -142,6 +151,7 @@ impl Reducible for TimerState {
                     time_amount: self.time_amount,
                     on_break: self.on_break,
                     break_time: self.break_time,
+                    work_time: self.work_time,
                 })
             }
             TimerAction::Pause => {
@@ -155,6 +165,7 @@ impl Reducible for TimerState {
                     time_amount: self.time_amount,
                     on_break: self.on_break,
                     break_time: self.break_time,
+                    work_time: self.work_time,
                 })
             }
             TimerAction::Cancel => {
@@ -168,6 +179,7 @@ impl Reducible for TimerState {
                     time_amount: self.time_amount,
                     on_break: self.on_break,
                     break_time: self.break_time,
+                    work_time: self.work_time,
                 })
             }
             TimerAction::SetBreak(time) => {
@@ -179,6 +191,20 @@ impl Reducible for TimerState {
                     time_amount: self.time_amount,
                     on_break: self.on_break,
                     break_time: time,
+                    work_time: self.work_time,
+                })
+            
+            }
+            TimerAction::SetWork(time) => {
+                Rc::new(TimerState {
+                    messages: self.messages.clone(),
+                    interval_handle: self.interval_handle.clone(),
+                    timeout_handle: self.timeout_handle.clone(),
+                    time_remaining: self.time_remaining,
+                    time_amount: self.time_amount,
+                    on_break: self.on_break,
+                    break_time: self.break_time,
+                    work_time: time,
                 })
             
             }
@@ -299,7 +325,7 @@ let on_exit_settings = {
             event.prevent_default();
             let work_time = time_ref.cast::<HtmlInputElement>().unwrap().value().parse().unwrap();
             let break_time = time_ref_2.cast::<HtmlInputElement>().unwrap().value().parse().unwrap();
-            state.dispatch(TimerAction::SetTime(work_time));
+            state.dispatch(TimerAction::SetWork(work_time));
             state_2.dispatch(TimerAction::SetBreak(break_time));
         })
         
@@ -307,6 +333,7 @@ let on_exit_settings = {
     
     let time_amount = state.clone().time_amount.to_string();
     let break_time = state.clone().break_time.to_string();
+    let work_time = state.clone().work_time.to_string();
 
     let timer_start = {
         let on_add_timeout = on_add_timeout.clone();
@@ -329,10 +356,17 @@ let on_exit_settings = {
             state.dispatch(TimerAction::Pause);
         })
     };
-
+    /*
+    /   Fix issue by making two different set times based on work and break
+    /
+    /
+    /
+    /
+    */
     let on_work = {
         let state = state.clone();
         Callback::from(move |_: MouseEvent| {
+            state.dispatch(TimerAction::SetTime(state.clone().work_time));
             state.dispatch(TimerAction::Cancel);
         })
     };
@@ -341,6 +375,7 @@ let on_exit_settings = {
         let state = state.clone();
         Callback::from(move |_: MouseEvent| {
             state.dispatch(TimerAction::SetTime(state.clone().break_time));
+            state.dispatch(TimerAction::Cancel);
         })
     };
     
@@ -382,7 +417,7 @@ let on_exit_settings = {
                                     label="Work time:"
                                     input_type="number"
                                     name=""
-                                    placeholder={time_amount}
+                                    placeholder={work_time}
                                     node_ref={time_ref}
                                 />
                                 <FieldInput

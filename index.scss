@@ -156,3 +156,14 @@ body {
     top: 1vh;
     right: 1vh;
 }
+
+/* Define color variables */
+$primary-color: #FF6F61; /* Assuming this is your primary color */
+$highlight-color: #66CCCC; /* Adjust as needed */
+
+/* Highlighted button styles */
+.highlighted {
+    background-color: $highlight-color;
+    color: white; /* Text color for highlighted button */
+    /* Add any other styles as needed */
+}

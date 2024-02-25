@@ -24,6 +24,8 @@ pub enum TimerAction {
     Pause,
     SetBreak(u32),
     SetWork(u32),
+    SetState(u32, u32),
+    ChangeState(bool),
 }
 
 #[derive(Clone, Debug)]
@@ -208,6 +210,44 @@ impl Reducible for TimerState {
                 })
             
             }
+            TimerAction::SetState(work, break_time) => {
+                if self.on_break {
+                    Rc::new(TimerState {
+                        messages: self.messages.clone(),
+                        interval_handle: self.interval_handle.clone(),
+                        timeout_handle: self.timeout_handle.clone(),
+                        time_remaining: break_time * 60,
+                        time_amount: break_time,
+                        on_break: self.on_break,
+                        break_time: break_time,
+                        work_time: work,
+                    })
+                } else {
+                    Rc::new(TimerState {
+                        messages: self.messages.clone(),
+                        interval_handle: self.interval_handle.clone(),
+                        timeout_handle: self.timeout_handle.clone(),
+                        time_remaining: work * 60,
+                        time_amount: work,
+                        on_break: self.on_break,
+                        break_time: break_time,
+                        work_time: work,
+                    })
+                }
+            
+            }
+            TimerAction::ChangeState(state) => {
+                Rc::new(TimerState {
+                    messages: self.messages.clone(),
+                    interval_handle: self.interval_handle.clone(),
+                    timeout_handle: self.timeout_handle.clone(),
+                    time_remaining: self.time_remaining,
+                    time_amount: self.time_amount,
+                    on_break: state,
+                    break_time: self.break_time,
+                    work_time: self.work_time,
+                })
+            }
         }
     }
 }
@@ -327,6 +367,8 @@ let on_exit_settings = {
             let break_time = time_ref_2.cast::<HtmlInputElement>().unwrap().value().parse().unwrap();
             state.dispatch(TimerAction::SetWork(work_time));
             state_2.dispatch(TimerAction::SetBreak(break_time));
+            state.dispatch(TimerAction::SetState(work_time, break_time));
+            state.dispatch(TimerAction::Cancel);
         })
         
     };
@@ -334,6 +376,10 @@ let on_exit_settings = {
     let time_amount = state.clone().time_amount.to_string();
     let break_time = state.clone().break_time.to_string();
     let work_time = state.clone().work_time.to_string();
+
+    
+    let work_button_class = if !state.on_break { "highlighted" } else { "" };
+    let break_button_class = if state.on_break { "highlighted" } else { "" };
 
     let timer_start = {
         let on_add_timeout = on_add_timeout.clone();
@@ -356,17 +402,12 @@ let on_exit_settings = {
             state.dispatch(TimerAction::Pause);
         })
     };
-    /*
-    /   Fix issue by making two different set times based on work and break
-    /
-    /
-    /
-    /
-    */
+
     let on_work = {
         let state = state.clone();
         Callback::from(move |_: MouseEvent| {
             state.dispatch(TimerAction::SetTime(state.clone().work_time));
+            state.dispatch(TimerAction::ChangeState(false));
             state.dispatch(TimerAction::Cancel);
         })
     };
@@ -375,6 +416,7 @@ let on_exit_settings = {
         let state = state.clone();
         Callback::from(move |_: MouseEvent| {
             state.dispatch(TimerAction::SetTime(state.clone().break_time));
+            state.dispatch(TimerAction::ChangeState(true));
             state.dispatch(TimerAction::Cancel);
         })
     };
@@ -389,8 +431,8 @@ let on_exit_settings = {
                 <h2 class="subtitle">{ "By Neblume"}</h2>
             </div>
             <div id="switch_states">
-                <button class="button" onclick={on_work}>{"Work"}</button>
-                <button class="button" onclick={on_break}>{"Break"}</button>
+                <button class={"button ".to_owned() + work_button_class} onclick={on_work}>{"Work"}</button>
+                <button class={"button ".to_owned() + break_button_class} onclick={on_break}>{"Break"}</button>
             </div>
             <div id="timer_wrapper">
                 <div id="time_remaining">{ display_countdown }</div>
@@ -417,14 +459,14 @@ let on_exit_settings = {
                                     label="Work time:"
                                     input_type="number"
                                     name=""
-                                    placeholder={work_time}
+                                    value={work_time}
                                     node_ref={time_ref}
                                 />
                                 <FieldInput
                                     label="Break time:"
                                     input_type="number"
                                     name=""
-                                    placeholder={break_time}
+                                    value={break_time}
                                     node_ref={time_ref_2}
 
                                 />

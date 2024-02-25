@@ -6,7 +6,7 @@ pub struct InputFieldProps {
     pub input_type: String,
     pub name: String,
     pub node_ref: NodeRef,
-    pub placeholder: String,
+    pub value: String,
 }
 
 #[function_component(FieldInput)]
@@ -16,7 +16,7 @@ pub fn field_input(props: &InputFieldProps) -> Html {
         input_type,
         name,
         node_ref,
-        placeholder,
+        value,
     } = props;
 
     html! {
@@ -26,7 +26,7 @@ pub fn field_input(props: &InputFieldProps) -> Html {
             < input
                 type = { input_type.clone() }
                 name = { name.clone() }
-                placeholder = { placeholder.clone() }
+                value = { value.clone() }
                 ref = { node_ref.clone() }
             />
         </label>

@@ -3,6 +3,7 @@ use web_sys::HtmlInputElement;
 use gloo::timers::callback::{Interval, Timeout};
 use yew::prelude::*;
 use crate::components::inputfield::FieldInput;
+use crate::components::selectfield::FieldSelect;
 
 
 use std::cell::RefCell;
@@ -470,6 +471,10 @@ let on_exit_settings = {
                                     node_ref={time_ref_2}
 
                                 />
+                                
+                                
+
+
                                 <button class="button" type="submit">{"Save"}</button>
                             </form>
                         </div>

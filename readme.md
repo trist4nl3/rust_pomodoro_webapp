@@ -14,12 +14,12 @@ This is a Pomodoro web app built using Rust and the Yew framework. It aims to he
 - Anime inspirations
 
 ## Planned Features
- [ ] Ability to switch from default settings from Animedoro to Pomodoro
- [ ] Change background image
- [ ] Add visual and audio cues for changes
- [ ] Ability to save settings locally using cookies
- [ ] OAuth login system for backend
- [ ] Add backend for leaderboard system
+- [ ] Ability to switch from default settings from Animedoro to Pomodoro
+- [ ] Change background image
+- [ ] Add visual and audio cues for changes
+- [ ] Ability to save settings locally using cookies
+- [ ] OAuth login system for backend
+- [ ] Add backend for leaderboard system
 
 ## Installation
 To run this project locally,

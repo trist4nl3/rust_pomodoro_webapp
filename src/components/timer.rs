@@ -39,6 +39,7 @@ pub struct TimerState {
     on_break: bool,
     break_time: u32,
     work_time: u32,
+    running: bool,
 }
 
 impl PartialEq for TimerState {
@@ -59,6 +60,7 @@ impl TimerState {
             on_break: false,
             break_time: 5,
             work_time: 25,
+            running: false,
         }
     }
 }
@@ -80,6 +82,7 @@ impl Reducible for TimerState {
                     on_break: self.on_break,
                     break_time: self.break_time,
                     work_time: self.work_time,
+                    running: self.running,
                 })
             }
             TimerAction::SetInterval(t) => Rc::new(TimerState {
@@ -91,6 +94,7 @@ impl Reducible for TimerState {
                 on_break: self.on_break,
                 break_time: self.break_time,
                 work_time: self.work_time,
+                running: self.running,
             }),
             TimerAction::SetTimeout(t) => Rc::new(TimerState {
                 messages: vec!["Timer started!!"],
@@ -101,6 +105,7 @@ impl Reducible for TimerState {
                 on_break: self.on_break,
                 break_time: self.break_time,
                 work_time: self.work_time,
+                running: true,
             }),
             TimerAction::TimeoutDone => {
                 let mut messages = self.messages.clone();
@@ -109,11 +114,12 @@ impl Reducible for TimerState {
                     messages,
                     interval_handle: self.interval_handle.clone(),
                     timeout_handle: None,
-                    time_remaining: self.time_amount * 60,
+                    time_remaining: self.time_remaining,
                     time_amount: self.time_amount,
                     on_break: !self.on_break,
                     break_time: self.break_time,
                     work_time: self.work_time,
+                    running: self.running,
                 })
             }
             
@@ -128,6 +134,7 @@ impl Reducible for TimerState {
                         on_break: self.on_break,
                         break_time: self.break_time,
                         work_time: self.work_time,
+                        running: self.running,
                     })
                 } else {
                     self.clone()
@@ -143,6 +150,7 @@ impl Reducible for TimerState {
                     on_break: self.on_break,
                     break_time: self.break_time,
                     work_time: self.work_time,
+                    running: self.running,
                 })
             }
             TimerAction::SetCountdown(time) => {
@@ -155,6 +163,7 @@ impl Reducible for TimerState {
                     on_break: self.on_break,
                     break_time: self.break_time,
                     work_time: self.work_time,
+                    running: self.running,
                 })
             }
             TimerAction::Pause => {
@@ -169,6 +178,7 @@ impl Reducible for TimerState {
                     on_break: self.on_break,
                     break_time: self.break_time,
                     work_time: self.work_time,
+                    running: false,
                 })
             }
             TimerAction::Cancel => {
@@ -183,6 +193,7 @@ impl Reducible for TimerState {
                     on_break: self.on_break,
                     break_time: self.break_time,
                     work_time: self.work_time,
+                    running: false,
                 })
             }
             TimerAction::SetBreak(time) => {
@@ -195,6 +206,7 @@ impl Reducible for TimerState {
                     on_break: self.on_break,
                     break_time: time,
                     work_time: self.work_time,
+                    running: self.running,
                 })
             
             }
@@ -208,6 +220,7 @@ impl Reducible for TimerState {
                     on_break: self.on_break,
                     break_time: self.break_time,
                     work_time: time,
+                    running: self.running,
                 })
             
             }
@@ -222,6 +235,7 @@ impl Reducible for TimerState {
                         on_break: self.on_break,
                         break_time: break_time,
                         work_time: work,
+                        running: self.running,
                     })
                 } else {
                     Rc::new(TimerState {
@@ -233,6 +247,7 @@ impl Reducible for TimerState {
                         on_break: self.on_break,
                         break_time: break_time,
                         work_time: work,
+                        running: self.running,
                     })
                 }
             
@@ -247,6 +262,7 @@ impl Reducible for TimerState {
                     on_break: state,
                     break_time: self.break_time,
                     work_time: self.work_time,
+                    running: self.running,
                 })
             }
         }
@@ -294,7 +310,7 @@ pub fn Pomodoro() -> Html {
     
     let display_countdown: Html = if state.clone().time_remaining > 0 {
         // Display time in 00:00 format
-        html! { <div id="time"> {  time_str } </div> }
+        html! { <div id="time"> {  time_str.clone() } </div> }
     } else {
         html! { <div id="time"> {  _time_str_2 } </div> }
     };
@@ -347,6 +363,7 @@ let on_exit_settings = {
 
             let t = Rc::new(Timeout::new(time * 1000, move || {
                 message_state.dispatch(TimerAction::TimeoutDone);
+                message_state.dispatch(TimerAction::SetState(message_state.clone().work_time, message_state.clone().break_time));
             }));
             let i = Rc::new(Interval::new(1000, move || {
                 ping_state.dispatch(TimerAction::UpdateCountdown);
@@ -373,15 +390,19 @@ let on_exit_settings = {
         })
         
     };
-    
+    let current_state = if !state.on_break { "Work" } else { "Break" };
+    let getTitle = if !state.clone().running {
+        html! {<title> {"Pomodoro Timer | Neblume "}</title>}
+    } else {
+        html! {<title>{current_state}{" : "}{time_str.clone()} </title>}
+    };
     let time_amount = state.clone().time_amount.to_string();
     let break_time = state.clone().break_time.to_string();
     let work_time = state.clone().work_time.to_string();
-
-    
+    let get_countdown = state.clone().time_remaining.to_string();
     let work_button_class = if !state.on_break { "highlighted" } else { "" };
     let break_button_class = if state.on_break { "highlighted" } else { "" };
-
+    
     let timer_start = {
         let on_add_timeout = on_add_timeout.clone();
         let on_exit_settings = on_exit_settings.clone();
@@ -425,6 +446,7 @@ let on_exit_settings = {
 
     html!(
         <>
+        { getTitle }
         <div id="background">
         <div id="content">
             <div id="title-area">

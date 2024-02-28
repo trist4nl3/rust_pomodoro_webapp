@@ -1,11 +1,13 @@
 use std::rc::Rc;
 use std::cell::RefCell;
-use web_sys::HtmlInputElement;
+use web_sys::{HtmlInputElement, HtmlAudioElement};
 use gloo::timers::callback::{Interval, Timeout};
 use yew::prelude::*;
-
+use wasm_bindgen::JsValue;
 use crate::services::timer::{TimerAction, TimerState};
 use crate::components::inputfield::FieldInput;
+
+
 
 
 #[function_component]
@@ -21,6 +23,33 @@ pub fn Pomodoro() -> Html {
         <div id="time">
             { time_str.clone() }
         </div>
+    };
+    // Loading sound files
+    let button_sound_ref = use_node_ref();
+    let alarm_sound_ref = use_node_ref();
+    let button_sound_url= "/src/assets/button.wav"; // Adjust the path to your first sound file
+    let alarm_sound_url = "/src/assets/alarm.mp3";
+
+    // Function to play sound
+    let play_sound = |sound_ref: &NodeRef| {
+        if let Some(audio) = sound_ref.cast::<HtmlAudioElement>() {
+            // Attempt to play the audio
+            let play_promise = audio.play();
+    
+            // Handle the result of the promise
+            if let Ok(play_promise) = play_promise {
+                // If the promise is successful, do nothing (audio will play)
+                play_promise.then(&wasm_bindgen::closure::Closure::wrap(Box::new(move |_result: JsValue| {
+                    // Do nothing, audio will play
+                }) as Box<dyn FnMut(JsValue)>));
+    
+            } else {
+                // If there's an error, log it
+                log::error!("Failed to play sound: {:?}", play_promise);
+            }
+        } else {
+            log::error!("Failed to cast NodeRef to HtmlAudioElement");
+        }
     };
 
     // Checking if theres a job going on to disable buttons
@@ -138,7 +167,9 @@ pub fn Pomodoro() -> Html {
     // Method for when the work button is pressed
     let on_work = {
         let state = state.clone();
+        let button_ref = button_sound_ref.clone();
         Callback::from(move |_: MouseEvent| {
+            play_sound(&button_ref);
             state.dispatch(TimerAction::SetTime(state.clone().work_time));
             state.dispatch(TimerAction::OnBreak(false));
             state.dispatch(TimerAction::Cancel);
@@ -178,6 +209,8 @@ pub fn Pomodoro() -> Html {
     html!(
         <>
         { getTitle }
+        <audio ref={button_sound_ref} src={"audio.mp3"} preload="auto" style="display: none;"></audio>
+        <audio ref={alarm_sound_ref} src={alarm_sound_url} preload="auto" style="display: none;"></audio>
         <div id="background">
         <div id="content">
             <div id="title-area">

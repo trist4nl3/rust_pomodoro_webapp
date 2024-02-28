@@ -1,5 +1,4 @@
 use std::rc::Rc;
-use web_sys::{HtmlInputElement, console};
 use gloo::timers::callback::{Interval, Timeout};
 use yew::prelude::*;
 

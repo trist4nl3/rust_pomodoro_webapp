@@ -1,0 +1,3 @@
+[dev]
+[dev.static]
+mime = { ".mp3" = "audio/mpeg" }

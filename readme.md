@@ -4,7 +4,7 @@ This is a Pomodoro web app built using Rust and the Yew framework. It aims to he
 
 ## Demo
 
-- You can try the Pomodor web app [here](https://trist4nl3.github.io/rust_pomodoro_webapp/)
+- You can try the Pomodoro web app [here](https://trist4nl3.github.io/rust_pomodoro_webapp/)
 
 ## Features
 - Timer for Pomodoro sessions
@@ -26,7 +26,6 @@ To run this project locally,
 1. Clone the repository and build the project using Rust's package manager Cargo:
 ```
 git clone https://github.com/trist4nl3/rust-pomodoro-webapp.git
-cd rust-pomodoro-timer
 cargo build --release
 ```
 2. Compose the docker container

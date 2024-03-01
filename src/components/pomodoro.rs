@@ -28,8 +28,7 @@ pub fn Pomodoro() -> Html {
         </div>
     };
     
-    // Define a NodeRef to hold a reference to the audio element
-let audio_ref = NodeRef::default();
+    let audio_ref = NodeRef::default();
 
 // Callback to play the sound effect
 let play_sound = {
@@ -203,8 +202,8 @@ let play_sound = {
         <>
         { getTitle }
         <audio ref={audio_ref.clone()} preload="auto">
-                <source src="alarm.mp3" type="audio/mpeg" />
-            </audio>
+    <source src="assets/alarm.mp3" type="audio/mpeg" />
+</audio>
         <div id="background">
         <div id="content">
             <div id="title-area">

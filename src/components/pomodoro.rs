@@ -1,9 +1,11 @@
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::fs::File;
+use std::io::BufReader;
 use web_sys::{HtmlInputElement};
 use gloo::timers::callback::{Interval, Timeout};
 use yew::prelude::*;
-
+use rodio::{Decoder, OutputStream, Sink};
 
 use crate::components::audio::init_audio;
 use crate::services::timer::{TimerAction, TimerState};
@@ -27,8 +29,14 @@ pub fn Pomodoro() -> Html {
         </div>
     };
     
-    // Audio
-    let (button_audio, alarm_audio, audio_context) = init_audio();
+    // Audio change this location later
+    let (_stream, stream_handle) = OutputStream::try_default().unwrap();
+    let file = BufReader::new(File::open("alarm.mp3"). unwrap());  
+    let source = Decoder::new(file).unwrap();
+    let sink = Sink::try_new(&stream_handle).unwrap();
+    
+
+    
     // Checking if theres a job going on to disable buttons
     let has_job = state.timeout_handle.is_some();
 
@@ -144,9 +152,10 @@ pub fn Pomodoro() -> Html {
     // Method for when the work button is pressed
     let on_work = {
         let state = state.clone();
-        let button_audio = button_audio.clone();
+        sink.append(source);
+        sink.sleep_until_end();
         Callback::from(move |_: MouseEvent| {
-            button_audio.play().unwrap();
+            
             state.dispatch(TimerAction::SetTime(state.clone().work_time));
             state.dispatch(TimerAction::OnBreak(false));
             state.dispatch(TimerAction::Cancel);
@@ -156,6 +165,7 @@ pub fn Pomodoro() -> Html {
     // Method for when the break button is pressed
     let on_break = {
         let state = state.clone();
+
         Callback::from(move |_: MouseEvent| {
             state.dispatch(TimerAction::SetTime(state.clone().break_time));
             state.dispatch(TimerAction::OnBreak(true));

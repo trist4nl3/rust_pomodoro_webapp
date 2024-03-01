@@ -1,15 +1,14 @@
 use std::rc::Rc;
 use std::cell::RefCell;
-use std::fs::File;
-use std::io::BufReader;
 use web_sys::{HtmlInputElement};
 use gloo::timers::callback::{Interval, Timeout};
-use yew::prelude::*;
-use rodio::{Decoder, OutputStream, Sink};
-
 use crate::components::audio::init_audio;
 use crate::services::timer::{TimerAction, TimerState};
 use crate::components::inputfield::FieldInput;
+use yew::prelude::*;
+use yew::html::NodeRef;
+use yew::Callback;
+use web_sys::HtmlAudioElement;
 
 
 
@@ -29,14 +28,22 @@ pub fn Pomodoro() -> Html {
         </div>
     };
     
-    // Audio change this location later
-    let (_stream, stream_handle) = OutputStream::try_default().unwrap();
-    let file = BufReader::new(File::open("alarm.mp3"). unwrap());  
-    let source = Decoder::new(file).unwrap();
-    let sink = Sink::try_new(&stream_handle).unwrap();
-    
+    // Define a NodeRef to hold a reference to the audio element
+let audio_ref = NodeRef::default();
+
+// Callback to play the sound effect
+let play_sound = {
+    let audio_ref = audio_ref.clone();
+    Callback::from(move |_| {
+        if let Some(audio_element) = audio_ref.cast::<HtmlAudioElement>() {
+            audio_element.play().unwrap();
+        }
+    })
+};
+
 
     
+
     // Checking if theres a job going on to disable buttons
     let has_job = state.timeout_handle.is_some();
 
@@ -152,10 +159,9 @@ pub fn Pomodoro() -> Html {
     // Method for when the work button is pressed
     let on_work = {
         let state = state.clone();
-        sink.append(source);
-        sink.sleep_until_end();
+        let play_sound = play_sound.clone();
         Callback::from(move |_: MouseEvent| {
-            
+            play_sound.emit(());
             state.dispatch(TimerAction::SetTime(state.clone().work_time));
             state.dispatch(TimerAction::OnBreak(false));
             state.dispatch(TimerAction::Cancel);
@@ -196,7 +202,9 @@ pub fn Pomodoro() -> Html {
     html!(
         <>
         { getTitle }
-
+        <audio ref={audio_ref.clone()} preload="auto">
+                <source src="alarm.mp3" type="audio/mpeg" />
+            </audio>
         <div id="background">
         <div id="content">
             <div id="title-area">

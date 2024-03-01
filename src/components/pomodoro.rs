@@ -2,7 +2,6 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use web_sys::{HtmlInputElement};
 use gloo::timers::callback::{Interval, Timeout};
-use crate::components::audio::init_audio;
 use crate::services::timer::{TimerAction, TimerState};
 use crate::components::inputfield::FieldInput;
 use yew::prelude::*;
@@ -30,11 +29,13 @@ pub fn Pomodoro() -> Html {
         </div>
     };
     
-    let audio_ref = Rc::new(RefCell::new(NodeRef::default()));
-    let audio_ref_start = Rc::clone(&audio_ref); 
+    let alarm_audio_ref = Rc::new(RefCell::new(NodeRef::default()));
+    let alarm_audio_ref_start = Rc::clone(&alarm_audio_ref); 
 
+    let button_audio_ref = use_node_ref();
     
-
+    
+    
     // Checking if theres a job going on to disable buttons
     let has_job = state.timeout_handle.is_some();
 
@@ -99,7 +100,7 @@ pub fn Pomodoro() -> Html {
             let interval_state = state.clone();
             let tick_state = state.clone();
             let complete_state = state.clone();
-            let audio_node = audio_ref_start.borrow().cast::<HtmlAudioElement>().unwrap();
+            let audio_node = alarm_audio_ref_start.borrow().cast::<HtmlAudioElement>().unwrap();
             // Getting overall time saved
             let time = state.clone().time_remaining;
             // Starting the countdown and ticking every second
@@ -127,7 +128,12 @@ pub fn Pomodoro() -> Html {
     let start_timer_parallel = {
         let start_timer = start_timer.clone();
         let on_exit_settings = on_exit_settings.clone();
+        let button_audio = button_audio_ref.clone();
         Callback::from(move |event: MouseEvent| {
+            let audio_node = button_audio.cast::<HtmlAudioElement>().unwrap();
+            audio_node.set_volume(0.5);
+            audio_node.pause().unwrap();
+            audio_node.play().unwrap();
             start_timer.emit(event.clone());
             on_exit_settings.emit(event.clone());
         })
@@ -144,7 +150,14 @@ pub fn Pomodoro() -> Html {
     // Method for pausing the timer
     let on_pause = {
         let state = state.clone();
+        let button_audio = button_audio_ref.clone();
         Callback::from(move |_: MouseEvent| {
+            
+            let audio_node = button_audio.cast::<HtmlAudioElement>().unwrap();
+            audio_node.set_volume(0.5);
+            audio_node.pause().unwrap();
+            audio_node.play().unwrap();
+
             state.dispatch(TimerAction::Pause);
         })
     };
@@ -152,6 +165,7 @@ pub fn Pomodoro() -> Html {
     // Method for when the work button is pressed
     let on_work = {
         let state = state.clone();
+
         Callback::from(move |_: MouseEvent| {
             state.dispatch(TimerAction::SetTime(state.clone().work_time));
             state.dispatch(TimerAction::OnBreak(false));
@@ -193,7 +207,8 @@ pub fn Pomodoro() -> Html {
     html!(
         <>
         { getTitle }
-        <audio ref={audio_ref.borrow().clone()} src="alarm.mp3" />
+        <audio ref={alarm_audio_ref.borrow().clone()} src="https://github.com/trist4nl3/rust_pomodoro_webapp/raw/master/src/assets/alarm.mp3" />
+        <audio ref={button_audio_ref} src="https://github.com/trist4nl3/rust_pomodoro_webapp/raw/master/src/assets/button.wav" />
         <div id="background">
         <div id="content">
             <div id="title-area">

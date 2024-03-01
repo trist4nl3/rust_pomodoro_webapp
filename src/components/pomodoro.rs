@@ -13,6 +13,8 @@ use web_sys::HtmlAudioElement;
 
 
 
+
+
 #[function_component]
 pub fn Pomodoro() -> Html {
     // Declaring state for utils
@@ -28,22 +30,8 @@ pub fn Pomodoro() -> Html {
         </div>
     };
     
-    let audio_ref = NodeRef::default();
-
-    let play_sound = {
-        let audio_ref = audio_ref.clone();
-        Callback::from(move |_| {
-            if let Some(audio_element) = audio_ref.cast::<HtmlAudioElement>() {
-                match audio_element.play() {
-                    Ok(_) => println!("Sound played successfully"),
-                    Err(err) => eprintln!("Error playing sound: {:?}", err),
-                }
-            } else {
-                eprintln!("Failed to cast audio element");
-            }
-        })
-    };
-
+    let audio_ref = Rc::new(RefCell::new(NodeRef::default()));
+    let audio_ref_start = Rc::clone(&audio_ref); 
 
     
 
@@ -111,6 +99,7 @@ pub fn Pomodoro() -> Html {
             let interval_state = state.clone();
             let tick_state = state.clone();
             let complete_state = state.clone();
+            let audio_node = audio_ref_start.borrow().cast::<HtmlAudioElement>().unwrap();
             // Getting overall time saved
             let time = state.clone().time_remaining;
             // Starting the countdown and ticking every second
@@ -121,6 +110,7 @@ pub fn Pomodoro() -> Html {
             }));
             // For when the timer is completed
             let t = Rc::new(Timeout::new(time * 1000, move || {
+                audio_node.play().unwrap();
                 complete_state.dispatch(TimerAction::TimeoutDone);
                 complete_state.dispatch(TimerAction::SaveTimeInput(
                     complete_state.clone().work_time,
@@ -162,9 +152,7 @@ pub fn Pomodoro() -> Html {
     // Method for when the work button is pressed
     let on_work = {
         let state = state.clone();
-        let play_sound = play_sound.clone();
         Callback::from(move |_: MouseEvent| {
-            play_sound.emit(());
             state.dispatch(TimerAction::SetTime(state.clone().work_time));
             state.dispatch(TimerAction::OnBreak(false));
             state.dispatch(TimerAction::Cancel);
@@ -205,9 +193,7 @@ pub fn Pomodoro() -> Html {
     html!(
         <>
         { getTitle }
-        <audio ref={audio_ref.clone()} preload="auto">
-    <source src="src/assets/alarm.mp3" type="audio/mpeg" />
-</audio>
+        <audio ref={audio_ref.borrow().clone()} src="alarm.mp3" />
         <div id="background">
         <div id="content">
             <div id="title-area">

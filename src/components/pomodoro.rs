@@ -30,15 +30,19 @@ pub fn Pomodoro() -> Html {
     
     let audio_ref = NodeRef::default();
 
-// Callback to play the sound effect
-let play_sound = {
-    let audio_ref = audio_ref.clone();
-    Callback::from(move |_| {
-        if let Some(audio_element) = audio_ref.cast::<HtmlAudioElement>() {
-            audio_element.play().unwrap();
-        }
-    })
-};
+    let play_sound = {
+        let audio_ref = audio_ref.clone();
+        Callback::from(move |_| {
+            if let Some(audio_element) = audio_ref.cast::<HtmlAudioElement>() {
+                match audio_element.play() {
+                    Ok(_) => println!("Sound played successfully"),
+                    Err(err) => eprintln!("Error playing sound: {:?}", err),
+                }
+            } else {
+                eprintln!("Failed to cast audio element");
+            }
+        })
+    };
 
 
     
@@ -202,7 +206,7 @@ let play_sound = {
         <>
         { getTitle }
         <audio ref={audio_ref.clone()} preload="auto">
-    <source src="assets/alarm.mp3" type="audio/mpeg" />
+    <source src="src/assets/alarm.mp3" type="audio/mpeg" />
 </audio>
         <div id="background">
         <div id="content">
